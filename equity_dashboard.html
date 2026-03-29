@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Equity Portfolio Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #07090F;
+    --bg2: #0C1018;
+    --bg3: #111723;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #E2E8F4;
+    --text2: #7A8BA8;
+    --text3: #3D4F69;
+    --green: #0FE0A0;
+    --green-dim: rgba(15,224,160,0.12);
+    --red: #FF4D6A;
+    --red-dim: rgba(255,77,106,0.12);
+    --gold: #F5A623;
+    --gold-dim: rgba(245,166,35,0.12);
+    --blue: #4B8BF5;
+    --blue-dim: rgba(75,139,245,0.12);
+    --font-head: 'Syne', sans-serif;
+    --font-data: 'DM Mono', monospace;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-head);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(7,9,15,0.95);
+    backdrop-filter: blur(12px);
+  }
+  .header-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-mark {
+    width: 32px; height: 32px;
+    background: var(--green);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-mark svg { width: 18px; height: 18px; }
+  .logo-text { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+  .logo-sub { font-size: 11px; color: var(--text2); font-family: var(--font-data); margin-top: 1px; }
+  .header-badge {
+    font-family: var(--font-data);
+    font-size: 11px;
+    color: var(--green);
+    background: var(--green-dim);
+    border: 1px solid rgba(15,224,160,0.25);
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  /* MAIN LAYOUT */
+  .main { padding: 32px 40px 60px; max-width: 1400px; margin: 0 auto; }
+
+  /* HERO METRICS */
+  .section-label {
+    font-family: var(--font-data);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .metric-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .metric-card:hover { border-color: var(--border2); }
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: 14px 14px 0 0;
+  }
+  .metric-card.green::before { background: var(--green); }
+  .metric-card.gold::before { background: var(--gold); }
+  .metric-card.blue::before { background: var(--blue); }
+  .metric-card.red::before { background: var(--red); }
+
+  .metric-label {
+    font-size: 11px;
+    color: var(--text2);
+    font-family: var(--font-data);
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+  .metric-value {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1;
+    margin-bottom: 8px;
+    font-family: var(--font-data);
+  }
+  .metric-card.green .metric-value { color: var(--green); }
+  .metric-card.gold .metric-value { color: var(--gold); }
+  .metric-card.blue .metric-value { color: var(--blue); }
+  .metric-card.red .metric-value { color: var(--text); }
+  .metric-sub {
+    font-size: 12px;
+    color: var(--text2);
+    font-family: var(--font-data);
+  }
+  .metric-icon {
+    position: absolute;
+    top: 22px; right: 22px;
+    font-size: 22px;
+    opacity: 0.4;
+  }
+
+  /* CHARTS ROW */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+  }
+  .panel-subtitle { font-size: 12px; color: var(--text2); font-family: var(--font-data); margin-top: 2px; }
+
+  /* INDUSTRY BAR CHART */
+  .ind-chart-wrap { position: relative; height: 380px; }
+
+  /* DONUT CHART */
+  .donut-wrap { position: relative; height: 200px; margin-bottom: 16px; }
+  .donut-legend { display: flex; flex-direction: column; gap: 8px; }
+  .legend-item {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+  }
+  .legend-left { display: flex; align-items: center; gap: 8px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .legend-name { color: var(--text2); }
+  .legend-val { font-family: var(--font-data); font-size: 11px; color: var(--text); }
+
+  /* TOP PERFORMERS ROW */
+  .performers-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .stock-list { display: flex; flex-direction: column; gap: 8px; }
+  .stock-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--bg3);
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition: border-color 0.15s;
+    cursor: default;
+  }
+  .stock-item:hover { border-color: var(--border2); }
+  .stock-rank {
+    font-family: var(--font-data);
+    font-size: 11px;
+    color: var(--text3);
+    width: 20px;
+  }
+  .stock-info { flex: 1; margin-left: 10px; }
+  .stock-name { font-size: 13px; font-weight: 600; }
+  .stock-ind { font-size: 11px; color: var(--text2); font-family: var(--font-data); margin-top: 1px; }
+  .stock-pct {
+    font-family: var(--font-data);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 6px;
+  }
+  .stock-pct.up { color: var(--green); background: var(--green-dim); }
+  .stock-pct.down { color: var(--red); background: var(--red-dim); }
+
+  /* FULL TABLE */
+  .table-section { margin-bottom: 32px; }
+  .table-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .search-box {
+    flex: 1;
+    min-width: 200px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 14px;
+    color: var(--text);
+    font-family: var(--font-data);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-box:focus { border-color: var(--border2); }
+  .search-box::placeholder { color: var(--text3); }
+
+  .filter-btn {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 16px;
+    color: var(--text2);
+    font-family: var(--font-data);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .filter-btn:hover, .filter-btn.active { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+
+  .table-wrap { overflow-x: auto; border-radius: 14px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead { background: var(--bg3); }
+  th {
+    padding: 12px 16px;
+    text-align: left;
+    font-family: var(--font-data);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--text3);
+    font-weight: 400;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: color 0.15s;
+  }
+  th:hover { color: var(--text2); }
+  th .sort-icon { opacity: 0.4; margin-left: 4px; }
+  th.sorted .sort-icon { opacity: 1; color: var(--green); }
+  td {
+    padding: 11px 16px;
+    border-top: 1px solid var(--border);
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  tbody tr:hover td { background: rgba(255,255,255,0.02); }
+  .td-name { font-weight: 600; font-size: 13px; }
+  .td-industry { color: var(--text2); font-family: var(--font-data); font-size: 11px; }
+  .td-num { font-family: var(--font-data); font-size: 12px; }
+  .td-gain { font-family: var(--font-data); font-size: 12px; }
+  .badge-up { color: var(--green); background: var(--green-dim); padding: 2px 8px; border-radius: 4px; font-family: var(--font-data); font-size: 11px; }
+  .badge-down { color: var(--red); background: var(--red-dim); padding: 2px 8px; border-radius: 4px; font-family: var(--font-data); font-size: 11px; }
+  .bar-cell { display: flex; align-items: center; gap: 8px; }
+  .bar-bg { flex: 1; height: 4px; background: var(--bg3); border-radius: 2px; min-width: 60px; }
+  .bar-fill { height: 4px; border-radius: 2px; background: var(--green); }
+
+  .no-results { text-align: center; padding: 40px; color: var(--text2); font-family: var(--font-data); font-size: 13px; }
+
+  /* FOOTER */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-data);
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .metric-card { animation: fadeUp 0.4s ease both; }
+  .metric-card:nth-child(1) { animation-delay: 0.05s; }
+  .metric-card:nth-child(2) { animation-delay: 0.1s; }
+  .metric-card:nth-child(3) { animation-delay: 0.15s; }
+  .metric-card:nth-child(4) { animation-delay: 0.2s; }
+  .panel { animation: fadeUp 0.4s ease 0.2s both; }
+
+  @media (max-width: 900px) {
+    .main { padding: 20px; }
+    .header { padding: 0 20px; }
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    .charts-row { grid-template-columns: 1fr; }
+    .performers-row { grid-template-columns: 1fr; }
+    .metric-value { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polyline points="2,13 6,8 10,11 16,4" stroke="#07090F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="16" cy="4" r="2" fill="#07090F"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">Equity Portfolio</div>
+      <div class="logo-sub">Top 50 Small-Cap Picks</div>
+    </div>
+  </div>
+  <div class="header-badge">ML-Predicted Returns</div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- KPI CARDS -->
+  <div class="section-label">Portfolio Overview</div>
+  <div class="metrics-grid">
+    <div class="metric-card green">
+      <div class="metric-icon">↑</div>
+      <div class="metric-label">TOTAL INVESTED</div>
+      <div class="metric-value">₹10L</div>
+      <div class="metric-sub">50 stocks · ₹20,000 each</div>
+    </div>
+    <div class="metric-card gold">
+      <div class="metric-icon">◈</div>
+      <div class="metric-label">PREDICTED VALUE</div>
+      <div class="metric-value">₹18.11L</div>
+      <div class="metric-sub">Based on model predictions</div>
+    </div>
+    <div class="metric-card green">
+      <div class="metric-icon">⬡</div>
+      <div class="metric-label">PREDICTED GAIN</div>
+      <div class="metric-value">₹8.11L</div>
+      <div class="metric-sub">+81.14% overall return</div>
+    </div>
+    <div class="metric-card red">
+      <div class="metric-icon">#</div>
+      <div class="metric-label">UNIVERSE</div>
+      <div class="metric-value">19</div>
+      <div class="metric-sub">Industries · 50 stocks</div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW -->
+  <div class="charts-row">
+    <!-- Industry Return Chart -->
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Return by Industry</div>
+          <div class="panel-subtitle">Predicted % gain on invested capital</div>
+        </div>
+      </div>
+      <div class="ind-chart-wrap">
+        <canvas id="indChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Sector Allocation Donut -->
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Capital Allocation</div>
+          <div class="panel-subtitle">By sector (₹ invested)</div>
+        </div>
+      </div>
+      <div class="donut-wrap">
+        <canvas id="donutChart"></canvas>
+      </div>
+      <div class="donut-legend" id="donutLegend"></div>
+    </div>
+  </div>
+
+  <!-- TOP / BOTTOM PERFORMERS -->
+  <div class="performers-row">
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Top Performers</div>
+          <div class="panel-subtitle">Highest predicted return %</div>
+        </div>
+      </div>
+      <div class="stock-list" id="topList"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Lowest Return Picks</div>
+          <div class="panel-subtitle">Still profitable — all 50 stocks show gain</div>
+        </div>
+      </div>
+      <div class="stock-list" id="bottomList"></div>
+    </div>
+  </div>
+
+  <!-- FULL STOCK TABLE -->
+  <div class="table-section">
+    <div class="section-label" style="margin-bottom:12px;">All Holdings</div>
+    <div class="table-controls">
+      <input class="search-box" type="text" id="searchInput" placeholder="Search by name or industry..." />
+      <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+      <button class="filter-btn" onclick="setFilter('top', this)">Return &gt; 90%</button>
+      <button class="filter-btn" onclick="setFilter('mid', this)">Return 65–90%</button>
+      <button class="filter-btn" onclick="setFilter('trading', this)">Trading</button>
+      <button class="filter-btn" onclick="setFilter('finance', this)">Finance</button>
+    </div>
+    <div class="table-wrap">
+      <table id="stockTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable('name')">STOCK <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('industry')">INDUSTRY <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('curr')">CUR PRICE <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('pred')">PRED PRICE <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('units')">UNITS <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('pred_val')">PRED VALUE <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('gain')">GAIN ₹ <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('pct')">RETURN % <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('pe')">P/E <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('roe')">ROE % <span class="sort-icon">↕</span></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<footer class="footer">
+  <span>Equity Portfolio Dashboard · ML Predicted Returns</span>
+  <span>50 stocks · 19 industries · ₹10,00,000 invested</span>
+</footer>
+
+<script>
+const STOCKS = [{"name":"Harshdeep","industry":"Miscellaneous","curr":71.32,"pred":73.58,"invest":20000,"units":322,"pred_val":23692.56,"gain":3692.56,"pct":18.46,"pe":17.52,"roe":13100.0,"roa":13100.0},{"name":"Kisaan Parivar","industry":"Finance & Investments","curr":29.59,"pred":32.84,"invest":20000,"units":1500,"pred_val":49263.52,"gain":29263.52,"pct":146.32,"pe":34.72,"roe":21.99,"roa":21.93},{"name":"Shine Fashions","industry":"Trading","curr":440.0,"pred":418.14,"invest":20000,"units":112,"pred_val":46831.93,"gain":26831.93,"pct":134.16,"pe":31.49,"roe":47.48,"roa":20.72},{"name":"Vaswani Industri","industry":"Steel - Sponge Iron","curr":56.23,"pred":82.56,"invest":20000,"units":573,"pred_val":47308.55,"gain":27308.55,"pct":136.54,"pe":18.68,"roe":7.71,"roa":4.63},{"name":"Integ. Proteins","industry":"Solvent Extraction","curr":32.35,"pred":36.32,"invest":20000,"units":1263,"pred_val":45871.16,"gain":25871.16,"pct":129.36,"pe":132.11,"roe":3.51,"roa":3.24},{"name":"Sudarshan Pharma","industry":"Trading","curr":179.6,"pred":181.86,"invest":20000,"units":246,"pred_val":44737.48,"gain":24737.48,"pct":123.69,"pe":38.05,"roe":11.25,"roa":4.89},{"name":"Ashika Credit","industry":"Finance & Investments","curr":177.75,"pred":176.88,"invest":20000,"units":238,"pred_val":42097.45,"gain":22097.45,"pct":110.49,"pe":10.09,"roe":17.06,"roa":13.9},{"name":"New Light Appare","industry":"Trading","curr":39.24,"pred":41.47,"invest":20000,"units":1000,"pred_val":41467.55,"gain":21467.55,"pct":107.34,"pe":82.95,"roe":14.71,"roa":3.27},{"name":"Chandrima Mercan","industry":"Trading","curr":33.32,"pred":38.2,"invest":20000,"units":1078,"pred_val":41175.65,"gain":21175.65,"pct":105.88,"pe":4.34,"roe":7.23,"roa":3.58},{"name":"Quality RO Indu.","industry":"Miscellaneous","curr":197.75,"pred":212.42,"invest":20000,"units":193,"pred_val":40997.48,"gain":20997.48,"pct":104.99,"pe":32.33,"roe":18.96,"roa":13.93},{"name":"Pritika Engineer","industry":"Castings & Forgings","curr":105.6,"pred":114.45,"invest":20000,"units":349,"pred_val":39944.23,"gain":19944.23,"pct":99.72,"pe":41.31,"roe":10.01,"roa":3.05},{"name":"S. V. J. Enterp.","industry":"Paper","curr":53.81,"pred":54.07,"invest":20000,"units":728,"pred_val":39360.81,"gain":19360.81,"pct":96.8,"pe":40.51,"roe":4.97,"roa":4.04},{"name":"Anuroop Packagin","industry":"Packaging","curr":39.96,"pred":44.65,"invest":20000,"units":858,"pred_val":38307.29,"gain":18307.29,"pct":91.54,"pe":10.44,"roe":17.13,"roa":9.94},{"name":"Tarini Internat.","industry":"Miscellaneous","curr":48.43,"pred":48.12,"invest":20000,"units":796,"pred_val":38304.53,"gain":18304.53,"pct":91.52,"pe":48.42,"roe":4.57,"roa":3.18},{"name":"Globe Intl. Car.","industry":"Miscellaneous","curr":74.8,"pred":82.06,"invest":20000,"units":464,"pred_val":38077.37,"gain":18077.37,"pct":90.39,"pe":75.47,"roe":8.74,"roa":4.08},{"name":"Stellant Secu.","industry":"Finance & Investments","curr":31.97,"pred":33.16,"invest":20000,"units":1143,"pred_val":37906.74,"gain":17906.74,"pct":89.53,"pe":8.17,"roe":48.0,"roa":23.92},{"name":"Lotus Chocolate","industry":"Food - Processing - Indian","curr":1258.05,"pred":1105.16,"invest":20000,"units":33,"pred_val":36470.19,"gain":16470.19,"pct":82.35,"pe":167.22,"roe":-2.77,"roa":-1.13},{"name":"Trishakti Indus","industry":"Finance & Investments","curr":70.41,"pred":80.56,"invest":20000,"units":458,"pred_val":36895.57,"gain":16895.57,"pct":84.48,"pe":60.45,"roe":4.82,"roa":3.48},{"name":"Mauria Udyog","industry":"Packaging","curr":10.5,"pred":18.7,"invest":20000,"units":1970,"pred_val":36846.48,"gain":16846.48,"pct":84.23,"pe":8.35,"roe":69.46,"roa":3.9},{"name":"Shantidoot Infra","industry":"Construction","curr":288.2,"pred":281.35,"invest":20000,"units":128,"pred_val":36012.35,"gain":16012.35,"pct":80.06,"pe":41.79,"roe":29.11,"roa":20.39},{"name":"Protean eGov","industry":"Computers - Software - Medium / Small","curr":1966.6,"pred":2149.11,"invest":20000,"units":16,"pred_val":34385.69,"gain":14385.69,"pct":71.93,"pe":81.79,"roe":10.91,"roa":8.5},{"name":"Shahi Shipping","industry":"Shipping","curr":27.38,"pred":30.81,"invest":20000,"units":1168,"pred_val":35982.36,"gain":15982.36,"pct":79.91,"pe":15.32,"roe":56.61,"roa":13.62},{"name":"Libord Finance","industry":"Finance & Investments","curr":28.22,"pred":26.68,"invest":20000,"units":1351,"pred_val":36043.8,"gain":16043.8,"pct":80.22,"pe":22.38,"roe":11.86,"roa":11.56},{"name":"Sylvan Plyboard","industry":"Miscellaneous","curr":113.9,"pred":117.81,"invest":20000,"units":303,"pred_val":35697.33,"gain":15697.33,"pct":78.49,"pe":36.24,"roe":6.91,"roa":2.99},{"name":"Marine Electric.","industry":"Electric Equipment","curr":282.85,"pred":285.15,"invest":20000,"units":124,"pred_val":35358.31,"gain":15358.31,"pct":76.79,"pe":145.67,"roe":11.22,"roa":4.76},{"name":"Platinum Industr","industry":"Chemicals","curr":322.4,"pred":354.71,"invest":20000,"units":98,"pred_val":34761.88,"gain":14761.88,"pct":73.81,"pe":40.71,"roe":22.14,"roa":16.86},{"name":"Rathi Steel","industry":"Steel - Medium / Small","curr":75.9,"pred":83.99,"invest":20000,"units":412,"pred_val":34603.52,"gain":14603.52,"pct":73.02,"pe":172.17,"roe":13.9,"roa":1.77},{"name":"Vuenow Infratech","industry":"Computers - Software - Medium / Small","curr":61.97,"pred":66.52,"invest":20000,"units":517,"pred_val":34388.32,"gain":14388.32,"pct":71.94,"pe":21.54,"roe":123.67,"roa":18.49},{"name":"Frontline Corp.","industry":"Trading","curr":68.48,"pred":69.31,"invest":20000,"units":491,"pred_val":34031.3,"gain":14031.3,"pct":70.16,"pe":28.07,"roe":10.23,"roa":1.7},{"name":"Spright Agro","industry":"Miscellaneous","curr":80.92,"pred":85.35,"invest":20000,"units":396,"pred_val":33798.19,"gain":13798.19,"pct":68.99,"pe":244.8,"roe":35.67,"roa":32.04},{"name":"K K Fincorp","industry":"Finance & Investments","curr":52.25,"pred":54.69,"invest":20000,"units":616,"pred_val":33689.99,"gain":13689.99,"pct":68.45,"pe":487.67,"roe":0.38,"roa":0.38},{"name":"Keynote Finan.","industry":"Finance & Investments","curr":274.3,"pred":279.27,"invest":20000,"units":121,"pred_val":33792.16,"gain":13792.16,"pct":68.96,"pe":7.19,"roe":24.09,"roa":21.46},{"name":"JFL Life","industry":"Pharmaceuticals - Indian - Formulations","curr":67.75,"pred":70.42,"invest":20000,"units":479,"pred_val":33730.0,"gain":13730.0,"pct":68.65,"pe":22.51,"roe":10.26,"roa":6.75},{"name":"Shreeshay Engi.","industry":"Construction","curr":49.1,"pred":50.18,"invest":20000,"units":671,"pred_val":33668.11,"gain":13668.11,"pct":68.34,"pe":59.48,"roe":4.81,"roa":4.77},{"name":"Power & Instrum.","industry":"Electric Equipment","curr":117.17,"pred":127.76,"invest":20000,"units":263,"pred_val":33601.94,"gain":13601.94,"pct":68.01,"pe":25.13,"roe":12.3,"roa":5.5},{"name":"Harshil Agrotech","industry":"Trading","curr":36.05,"pred":40.13,"invest":20000,"units":837,"pred_val":33584.66,"gain":13584.66,"pct":67.92,"pe":48.66,"roe":13.4,"roa":5.9},{"name":"Vintron Info.","industry":"Trading","curr":51.31,"pred":52.06,"invest":20000,"units":577,"pred_val":30041.22,"gain":10041.22,"pct":50.21,"pe":24.15,"roe":2328.67,"roa":18.06},{"name":"Goldkart Jewels","industry":"Trading","curr":160.8,"pred":165.76,"invest":20000,"units":201,"pred_val":33317.04,"gain":13317.04,"pct":66.59,"pe":278.26,"roe":4.24,"roa":2.61},{"name":"NTC Industries","industry":"Cigarettes","curr":233.05,"pred":221.27,"invest":20000,"units":151,"pred_val":33411.82,"gain":13411.82,"pct":67.06,"pe":40.75,"roe":7.14,"roa":4.83},{"name":"Kellton Tech","industry":"Computers - Software - Medium / Small","curr":155.52,"pred":178.38,"invest":20000,"units":187,"pred_val":33356.55,"gain":13356.55,"pct":66.78,"pe":22.1,"roe":15.68,"roa":10.19},{"name":"Kabsons Industri","industry":"Trading","curr":40.31,"pred":40.16,"invest":20000,"units":828,"pred_val":33252.06,"gain":13252.06,"pct":66.26,"pe":28.73,"roe":23.17,"roa":14.97},{"name":"Edvenswa Enter","industry":"Computers - Software - Medium / Small","curr":95.89,"pred":96.61,"invest":20000,"units":343,"pred_val":33136.63,"gain":13136.63,"pct":65.68,"pe":24.6,"roe":15.44,"roa":12.97},{"name":"Suzlon Energy","industry":"Electric Equipment","curr":71.35,"pred":87.36,"invest":20000,"units":378,"pred_val":33021.62,"gain":13021.62,"pct":65.11,"pe":104.42,"roe":28.45,"roa":11.24},{"name":"DC Infotech","industry":"Trading","curr":419.6,"pred":386.78,"invest":20000,"units":85,"pred_val":32876.36,"gain":12876.36,"pct":64.38,"pe":46.98,"roe":28.98,"roa":6.68},{"name":"Mukka Proteins","industry":"Food - Processing - Indian","curr":50.43,"pred":58.19,"invest":20000,"units":564,"pred_val":32820.9,"gain":12820.9,"pct":64.1,"pe":21.6,"roe":25.76,"roa":9.8},{"name":"Jigar Cables","industry":"Cables - Power","curr":76.32,"pred":82.07,"invest":20000,"units":399,"pred_val":32744.54,"gain":12744.54,"pct":63.72,"pe":51.61,"roe":6.64,"roa":4.46},{"name":"Rapicut Carbides","industry":"Engineering","curr":175.8,"pred":181.42,"invest":20000,"units":180,"pred_val":32655.31,"gain":12655.31,"pct":63.28,"pe":192.65,"roe":2.26,"roa":1.45},{"name":"Madhav Infra","industry":"Construction","curr":14.96,"pred":18.13,"invest":20000,"units":1806,"pred_val":32744.51,"gain":12744.51,"pct":63.72,"pe":18.6,"roe":12.21,"roa":4.26},{"name":"HRH Next","industry":"Computers - Software - Medium / Small","curr":49.0,"pred":52.33,"invest":20000,"units":625,"pred_val":32707.24,"gain":12707.24,"pct":63.54,"pe":25.34,"roe":11.32,"roa":5.4},{"name":"Samyak Internati","industry":"Trading","curr":48.73,"pred":53.79,"invest":20000,"units":606,"pred_val":32596.75,"gain":12596.75,"pct":62.98,"pe":7.95,"roe":5.68,"roa":4.55}];
+
+const IND_DATA = [{"industry":"Steel - Sponge Iron","invest":20000,"pred_val":47308.55,"gain":27308.55,"pct":136.54,"count":1},{"industry":"Solvent Extraction","invest":20000,"pred_val":45871.16,"gain":25871.16,"pct":129.36,"count":1},{"industry":"Castings & Forgings","invest":20000,"pred_val":39944.23,"gain":19944.23,"pct":99.72,"count":1},{"industry":"Paper","invest":20000,"pred_val":39360.81,"gain":19360.81,"pct":96.8,"count":1},{"industry":"Finance & Investments","invest":140000,"pred_val":269689.23,"gain":129689.23,"pct":92.64,"count":7},{"industry":"Packaging","invest":40000,"pred_val":75153.77,"gain":35153.77,"pct":87.88,"count":2},{"industry":"Trading","invest":220000,"pred_val":403912.0,"gain":183912.0,"pct":83.6,"count":11},{"industry":"Shipping","invest":20000,"pred_val":35982.36,"gain":15982.36,"pct":79.91,"count":1},{"industry":"Miscellaneous","invest":120000,"pred_val":210567.46,"gain":90567.46,"pct":75.47,"count":6},{"industry":"Chemicals","invest":20000,"pred_val":34761.88,"gain":14761.88,"pct":73.81,"count":1},{"industry":"Food - Processing - Indian","invest":40000,"pred_val":69291.09,"gain":29291.09,"pct":73.23,"count":2},{"industry":"Steel - Medium / Small","invest":20000,"pred_val":34603.52,"gain":14603.52,"pct":73.02,"count":1},{"industry":"Construction","invest":60000,"pred_val":102424.97,"gain":42424.97,"pct":70.71,"count":3},{"industry":"Electric Equipment","invest":60000,"pred_val":101981.87,"gain":41981.87,"pct":69.97,"count":3},{"industry":"Pharmaceuticals - Indian - Formulations","invest":20000,"pred_val":33730.0,"gain":13730.0,"pct":68.65,"count":1},{"industry":"Computers - Software - Medium / Small","invest":100000,"pred_val":167974.43,"gain":67974.43,"pct":67.97,"count":5},{"industry":"Cigarettes","invest":20000,"pred_val":33411.82,"gain":13411.82,"pct":67.06,"count":1},{"industry":"Cables - Power","invest":20000,"pred_val":32744.54,"gain":12744.54,"pct":63.72,"count":1},{"industry":"Engineering","invest":20000,"pred_val":32655.31,"gain":12655.31,"pct":63.28,"count":1}];
+
+const PALETTE = ['#0FE0A0','#4B8BF5','#F5A623','#FF4D6A','#A78BFA','#34D399','#60A5FA','#FBBF24','#F87171','#C084FC','#2DD4BF','#818CF8','#FB923C','#E879F9','#38BDF8','#A3E635','#FCD34D','#F472B6','#67E8F9'];
+
+// ---- INDUSTRY BAR CHART ----
+const indLabels = IND_DATA.map(d => d.industry.replace('Computers - Software - Medium / Small','Software Med/Sm').replace('Pharmaceuticals - Indian - Formulations','Pharma Formulations').replace('Food - Processing - Indian','Food Processing'));
+const indPct = IND_DATA.map(d => d.pct);
+const barColors = indPct.map(p => p >= 100 ? '#0FE0A0' : p >= 80 ? '#4B8BF5' : '#6B7B96');
+
+const indCtx = document.getElementById('indChart').getContext('2d');
+new Chart(indCtx, {
+  type: 'bar',
+  data: {
+    labels: indLabels,
+    datasets: [{
+      data: indPct,
+      backgroundColor: barColors,
+      borderRadius: 4,
+      barThickness: 16,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#0C1018',
+        borderColor: 'rgba(255,255,255,0.1)',
+        borderWidth: 1,
+        titleColor: '#E2E8F4',
+        bodyColor: '#7A8BA8',
+        titleFont: { family: 'DM Mono', size: 12 },
+        bodyFont: { family: 'DM Mono', size: 11 },
+        callbacks: {
+          label: ctx => {
+            const d = IND_DATA[ctx.dataIndex];
+            return [`  Return: ${d.pct.toFixed(1)}%`, `  Gain: ₹${Math.round(d.gain).toLocaleString('en-IN')}`, `  Stocks: ${d.count}`];
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        min: 0,
+        grid: { color: 'rgba(255,255,255,0.04)' },
+        ticks: { color: '#3D4F69', font: { family: 'DM Mono', size: 10 }, callback: v => v + '%' },
+        border: { color: 'rgba(255,255,255,0.06)' }
+      },
+      y: {
+        grid: { display: false },
+        ticks: { color: '#7A8BA8', font: { family: 'DM Mono', size: 10 }, autoSkip: false },
+        border: { display: false }
+      }
+    }
+  }
+});
+
+// ---- DONUT CHART ----
+const topSectors = IND_DATA.sort((a,b) => b.invest - a.invest).slice(0,8);
+const otherInvest = IND_DATA.slice(8).reduce((s,d) => s + d.invest, 0);
+const donutLabels = [...topSectors.map(d => d.industry.replace('Computers - Software - Medium / Small','Software').replace('Finance & Investments','Finance')), 'Others'];
+const donutData = [...topSectors.map(d => d.invest), otherInvest];
+const donutColors = PALETTE.slice(0, donutLabels.length);
+
+const donutCtx = document.getElementById('donutChart').getContext('2d');
+new Chart(donutCtx, {
+  type: 'doughnut',
+  data: {
+    labels: donutLabels,
+    datasets: [{ data: donutData, backgroundColor: donutColors, borderWidth: 2, borderColor: '#0C1018', hoverOffset: 6 }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '68%',
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#0C1018',
+        borderColor: 'rgba(255,255,255,0.1)',
+        borderWidth: 1,
+        titleColor: '#E2E8F4',
+        bodyColor: '#7A8BA8',
+        titleFont: { family: 'DM Mono', size: 12 },
+        bodyFont: { family: 'DM Mono', size: 11 },
+        callbacks: {
+          label: ctx => `  ₹${ctx.parsed.toLocaleString('en-IN')} (${((ctx.parsed/1000000)*100).toFixed(1)}%)`
+        }
+      }
+    }
+  }
+});
+
+const legend = document.getElementById('donutLegend');
+donutLabels.slice(0,6).forEach((lbl, i) => {
+  const pct = ((donutData[i] / 1000000) * 100).toFixed(1);
+  legend.innerHTML += `<div class="legend-item">
+    <div class="legend-left">
+      <div class="legend-dot" style="background:${donutColors[i]}"></div>
+      <span class="legend-name">${lbl}</span>
+    </div>
+    <span class="legend-val">${pct}%</span>
+  </div>`;
+});
+
+// ---- TOP / BOTTOM LISTS ----
+const sorted = [...STOCKS].sort((a,b) => b.pct - a.pct);
+const topEl = document.getElementById('topList');
+const botEl = document.getElementById('bottomList');
+
+sorted.slice(0,7).forEach((s, i) => {
+  topEl.innerHTML += `<div class="stock-item">
+    <div class="stock-rank">${i+1}</div>
+    <div class="stock-info">
+      <div class="stock-name">${s.name}</div>
+      <div class="stock-ind">${s.industry}</div>
+    </div>
+    <span class="stock-pct up">+${s.pct.toFixed(1)}%</span>
+  </div>`;
+});
+
+sorted.slice(-7).reverse().forEach((s, i) => {
+  botEl.innerHTML += `<div class="stock-item">
+    <div class="stock-rank">${50 - i}</div>
+    <div class="stock-info">
+      <div class="stock-name">${s.name}</div>
+      <div class="stock-ind">${s.industry}</div>
+    </div>
+    <span class="stock-pct up">+${s.pct.toFixed(1)}%</span>
+  </div>`;
+});
+
+// ---- TABLE ----
+let currentData = [...STOCKS];
+let sortKey = 'pct';
+let sortDir = -1;
+let filterMode = 'all';
+const maxPct = Math.max(...STOCKS.map(s => s.pct));
+
+function formatINR(n) {
+  return '₹' + Math.round(n).toLocaleString('en-IN');
+}
+
+function renderTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  let data = currentData.filter(s => {
+    if (q && !s.name.toLowerCase().includes(q) && !s.industry.toLowerCase().includes(q)) return false;
+    if (filterMode === 'top') return s.pct > 90;
+    if (filterMode === 'mid') return s.pct >= 65 && s.pct <= 90;
+    if (filterMode === 'trading') return s.industry === 'Trading';
+    if (filterMode === 'finance') return s.industry === 'Finance & Investments';
+    return true;
+  });
+
+  data.sort((a,b) => {
+    const va = a[sortKey], vb = b[sortKey];
+    if (typeof va === 'string') return sortDir * va.localeCompare(vb);
+    return sortDir * (va - vb);
+  });
+
+  const tbody = document.getElementById('tableBody');
+  if (data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" class="no-results">No stocks match your filter.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = data.map(s => {
+    const barW = Math.round((s.pct / maxPct) * 100);
+    const sign = s.gain >= 0;
+    return `<tr>
+      <td><div class="td-name">${s.name}</div></td>
+      <td><div class="td-industry">${s.industry}</div></td>
+      <td class="td-num">₹${s.curr.toFixed(2)}</td>
+      <td class="td-num">₹${s.pred.toFixed(2)}</td>
+      <td class="td-num">${s.units.toLocaleString('en-IN')}</td>
+      <td class="td-num">${formatINR(s.pred_val)}</td>
+      <td class="td-gain">${sign ? '+' : ''}${formatINR(s.gain)}</td>
+      <td>
+        <div class="bar-cell">
+          <span class="${sign ? 'badge-up' : 'badge-down'}">${sign ? '+' : ''}${s.pct.toFixed(1)}%</span>
+          <div class="bar-bg"><div class="bar-fill" style="width:${barW}%;background:${s.pct>=100?'#0FE0A0':s.pct>=80?'#4B8BF5':'#6B7B96'}"></div></div>
+        </div>
+      </td>
+      <td class="td-num">${s.pe.toFixed(1)}x</td>
+      <td class="td-num" style="color:${s.roe > 20 ? '#0FE0A0' : s.roe < 0 ? '#FF4D6A' : '#7A8BA8'}">${s.roe.toFixed(1)}%</td>
+    </tr>`;
+  }).join('');
+}
+
+function sortTable(key) {
+  if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = -1; }
+  document.querySelectorAll('th').forEach(t => t.classList.remove('sorted'));
+  event.currentTarget.classList.add('sorted');
+  renderTable();
+}
+
+function setFilter(mode, btn) {
+  filterMode = mode;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+document.getElementById('searchInput').addEventListener('input', renderTable);
+renderTable();
+</script>
+</body>
+</html>
